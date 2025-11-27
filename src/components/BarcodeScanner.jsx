@@ -62,7 +62,7 @@ export default function BarcodeScanner({ open, onClose, onDetect }) {
           </button>
         </div>
         <div className="overflow-hidden rounded-2xl border border-[#efd2bf] bg-black">
-          <video ref={videoRef} className="h-64 w-full object-cover" autoPlay muted playsInline />
+          <video ref={videoRef} className="h-64 w-full object-contain" autoPlay muted playsInline />
         </div>
         {error && <p className="text-xs text-[#c24b34]">{error}</p>}
         <p className="text-xs text-[#7b5447]">Баркодыг төвд тааруулж, амжилттай уншсны дараа камер автоматаар унтарна.</p>

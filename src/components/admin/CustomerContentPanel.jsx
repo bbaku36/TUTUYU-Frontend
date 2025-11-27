@@ -155,15 +155,16 @@ export default function CustomerContentPanel({
                 placeholder="Цагийн хуваарь болон салбарын хаяг..."
               />
               <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-[#e2a07d] bg-[#fff9f4] px-3 py-3">
-                <div className="h-20 w-28 overflow-hidden rounded-lg border border-[#f0d9c5] bg-white">
+                <div className="relative w-full max-w-[200px] overflow-hidden rounded-lg border border-[#f0d9c5] bg-white sm:max-w-[240px]">
                   {scheduleImage ? (
                     <img
                       src={scheduleImage}
                       alt={`${SCHEDULE_SECTION_TITLE} зураг`}
-                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      className="block h-24 w-full object-contain sm:h-28"
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-xs text-[#b27b66]">Зураг байхгүй</div>
+                    <div className="flex h-20 items-center justify-center text-xs text-[#b27b66]">Зураг байхгүй</div>
                   )}
                 </div>
                 <div className="space-y-2 text-xs text-[#6f4a3b]">

@@ -12,8 +12,8 @@ import {
 const tabs = [
   {
     id: 'phone',
-    label: 'Утас дугаараар',
-    placeholder: 'Утас дугаар....',
+    label: 'Утасны дугаараар',
+    placeholder: 'Утасны дугаар....',
     helper: '',
   },
   {
@@ -45,7 +45,7 @@ const adminPass = typeof adminPassEnv === 'string' ? `${adminPassEnv}` : ''
 const adminConfigMissing = !adminUser || !adminPass
 
 const HeroCard = ({ heroImage, backgroundImage }) => (
-  <div className="relative overflow-hidden rounded-[36px] bg-gradient-to-br from-[#f9e2cf] via-[#f0c5a3] to-[#e2a07d] p-10 text-[#432b24] shadow-[0_35px_90px_rgba(226,160,125,0.35)]">
+  <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#f9e2cf] via-[#f0c5a3] to-[#e2a07d] p-6 text-[#432b24] shadow-[0_35px_90px_rgba(226,160,125,0.35)] sm:rounded-[30px] sm:p-8 lg:rounded-[36px] lg:p-10">
     <div
       className="absolute inset-0 bg-[length:cover] bg-center opacity-25"
       style={{
@@ -54,30 +54,35 @@ const HeroCard = ({ heroImage, backgroundImage }) => (
         }')`,
       }}
     />
-    <div className="relative flex flex-col gap-8 md:flex-row md:items-center">
-      <div className="relative mx-auto flex h-56 w-56 items-center justify-center rounded-[38px] border border-white/40 bg-white/50 shadow-[0_20px_60px_rgba(255,255,255,0.35)]">
-        <div
-          className="absolute inset-0 rounded-[38px] bg-cover bg-center opacity-90"
-          style={{
-            backgroundImage: `url('${heroImage || backgroundImage || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=900&q=80'}')`,
-          }}
+    <div className="relative flex flex-col gap-6 sm:gap-8 md:flex-row md:items-center">
+      <div className="relative mx-auto w-full max-w-[260px] aspect-square overflow-hidden rounded-[28px] border border-white/40 bg-white/50 shadow-[0_20px_60px_rgba(255,255,255,0.35)] sm:max-w-[300px] sm:rounded-[32px] md:max-w-[340px] md:rounded-[38px]">
+        <img
+          src={heroImage || backgroundImage || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=900&q=80'}
+          alt="Hero"
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-contain rounded-[28px] sm:rounded-[32px] md:rounded-[38px]"
         />
-        <div className="absolute inset-0 rounded-[38px] bg-gradient-to-br from-transparent via-white/10 to-[#f0c29d]/40" />
+        <div className="pointer-events-none absolute inset-0 rounded-[28px] bg-gradient-to-br from-transparent via-white/10 to-[#f0c29d]/40 sm:rounded-[32px] md:rounded-[38px]" />
       </div>
       <div className="space-y-6">
         <div className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/30 px-4 py-1 text-xs uppercase tracking-[0.4em] text-[#8a6455]">
           Улаанбаатар хот
         </div>
         <div>
-          <h1 className="text-4xl font-semibold text-[#3d241c]">TUTUYU Cargo</h1>
-          <p className="mt-4 text-base text-[#70483a]">
-            Улаанбаатар хотын логистикийн цэгүүдийг бодоход хэв маяг бүхий, зөөлөн ягаан-цагаан өнгөний
-            хослолтой интерфэйс. Хэрэглэгчдээ хотын хэмнэлтэй уялдуулан авхаалж самбаатай үйлчилгээ үзүүлээрэй.
+          <h1 className="text-3xl font-semibold text-[#3d241c] sm:text-4xl">TUTUYU Cargo</h1>
+          <p className="mt-4 text-sm text-[#70483a] sm:text-base">
+Бид БНХАУ-аас Улаанбаатар хот хүртэл хурдан шуурхай, найдвартай карго тээврийн үйлчилгээг үзүүлж байна. Жижиг, том бүх төрлийн ачаа барааг аюулгүй, хариуцлагатайгаар тээвэрлэж, таны гарт цаг хугацаанд нь хүргэнэ. Хувь хүн болон албан байгууллагын бүх төрлийн захиалгыг тогтмол хүлээн авч байна.
+
+
+          
           </p>
         </div>
-        <div className="flex flex-wrap gap-3 text-sm text-[#9b6b58]">
+        <div className="flex flex-wrap gap-2 text-xs text-[#9b6b58] sm:text-sm">
           {['UB Tracking', '24/7 Support', 'Premium Express'].map((badge) => (
-            <span key={badge} className="rounded-full border border-white/70 bg-white/60 px-4 py-2 backdrop-blur">
+            <span
+              key={badge}
+              className="rounded-full border border-white/70 bg-white/60 px-3 py-2 backdrop-blur sm:px-4"
+            >
               {badge}
             </span>
           ))}
@@ -120,8 +125,15 @@ const AccordionItem = ({ section, isOpen, onToggle }) => {
       {isOpen && (
         <div className="mt-3 space-y-2 text-sm leading-relaxed text-[#6f4a3b]">
           {section.image ? (
-            <div className="mb-3 overflow-hidden rounded-2xl border border-[#efd2bf]/70">
-              <img src={section.image} alt={section.title} className="h-40 w-full object-cover" />
+            <div className="mb-3 overflow-hidden rounded-2xl border border-[#efd2bf]/70 bg-[#fff9f4]">
+              <div className="relative aspect-[4/3] w-full max-h-[280px] sm:max-h-[320px]">
+                <img
+                  src={section.image}
+                  alt={section.title}
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-contain"
+                />
+              </div>
             </div>
           ) : null}
           {section.description.map((line, index) => {
@@ -242,6 +254,7 @@ function App() {
   const hasInitializedDeliveryRef = useRef(false)
   const amountFor = (record) => (Number(record.declared) || 0) * (record.quantity || 1)
   const viewMode = isAdminRoute ? 'admin' : 'customer'
+  const containerWidth = viewMode === 'admin' ? 'max-w-6xl' : 'max-w-5xl'
 
   useEffect(() => {
     const load = async () => {
@@ -503,12 +516,10 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-10 sm:py-12">
-      <div
-        className={`mx-auto flex w-full flex-col gap-6 ${viewMode === 'admin' ? 'w-screen' : 'max-w-4xl'}`}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-full border border-white/60 bg-white/80 px-5 py-2 text-xs text-[#8d6457] shadow-lg">
-          <div className="flex items-center gap-2 font-semibold text-[#4d2d25]">
+    <div className="min-h-screen px-4 py-8 sm:py-12">
+      <div className={`mx-auto flex w-full flex-col gap-6 ${containerWidth}`}>
+        <div className="flex flex-col gap-3 rounded-3xl border border-white/60 bg-white/80 px-4 py-3 text-xs text-[#8d6457] shadow-lg sm:flex-row sm:items-center sm:justify-between sm:rounded-full sm:px-5 sm:py-2 sm:text-sm">
+          <div className="flex items-center justify-between gap-2 font-semibold text-[#4d2d25] sm:justify-start">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#b5654f] text-white">TU</span>
             TUTUYU Cargo
           </div>
@@ -538,7 +549,7 @@ function App() {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`pill ${activeTab === tab.id ? 'border-[#b5654f] shadow-lg' : ''}`}
+                  className={`pill w-full sm:w-auto ${activeTab === tab.id ? 'border-[#b5654f] shadow-lg' : ''}`}
                 >
                   {tab.label}
                 </button>
@@ -553,7 +564,7 @@ function App() {
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder={currentTab.placeholder}
-                  className="w-full rounded-2xl border-none bg-transparent px-5 py-4 text-base text-[#3b231f] placeholder:text-[#c99a81] focus:outline-none"
+                  className="w-full rounded-2xl border-none bg-transparent px-4 py-3 text-base text-[#3b231f] placeholder:text-[#c99a81] focus:outline-none sm:px-5 sm:py-4"
                 />
               </div>
               <span className="mt-2 block text-xs text-[#a57163]">{currentTab.helper}</span>
