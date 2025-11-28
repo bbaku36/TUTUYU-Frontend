@@ -49,6 +49,13 @@ export async function initDb() {
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS customer_pins (
+      phone TEXT PRIMARY KEY,
+      pin_hash TEXT NOT NULL,
+      pin_plain TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
     -- Шинэ талбаруудыг нэмнэ (алдаа гарахаас сэргийлэн IF NOT EXISTS).
     ALTER TABLE shipments ADD COLUMN IF NOT EXISTS delivered_at TIMESTAMPTZ;
     ALTER TABLE shipments ADD COLUMN IF NOT EXISTS delivery_note TEXT;
