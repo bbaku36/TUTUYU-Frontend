@@ -239,10 +239,12 @@ function App() {
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [deliveryNote, setDeliveryNote] = useState('')
   const [deliveryPhone, setDeliveryPhone] = useState('')
+  const [deliveryPin, setDeliveryPin] = useState('')
   const [selectedForDelivery, setSelectedForDelivery] = useState([])
   const [deliverySubmitting, setDeliverySubmitting] = useState(false)
   const [deliveryFeedback, setDeliveryFeedback] = useState('')
   const [deliveryError, setDeliveryError] = useState('')
+  const [pinHint, setPinHint] = useState('')
   const [newDeliveryIds, setNewDeliveryIds] = useState([])
   const [isAdminAuthed, setIsAdminAuthed] = useState(false)
   const [adminUserInput, setAdminUserInput] = useState('')
@@ -325,9 +327,13 @@ function App() {
     const available = searchResults.filter((record) => (record.location || 'warehouse') === 'warehouse')
     setSelectedForDelivery(available.map((record) => record.id))
     if (available.length) {
-      setDeliveryPhone((prev) => prev || available[0].phone || '')
-      setDeliveryAddress((prev) => prev || available[0].deliveryAddress || '')
+      setDeliveryPhone(available[0].phone || '')
+      setDeliveryAddress(available[0].deliveryAddress || '')
+    } else {
+      setDeliveryPhone('')
+      setDeliveryAddress('')
     }
+    setDeliveryPin('')
   }, [searchResults])
 
   const handleSectionsChange = async (next) => {
@@ -411,11 +417,13 @@ function App() {
   const handleDeliveryRequest = async () => {
     setDeliveryError('')
     setDeliveryFeedback('')
+    setPinHint('')
 
     const targets = requestableShipments.filter((record) => selectedForDelivery.includes(record.id))
     const address = deliveryAddress.trim()
     const note = deliveryNote.trim()
     const phoneValue = deliveryPhone.trim()
+    const pinValue = deliveryPin.trim()
 
     if (!targets.length) {
       setDeliveryError('Агуулахад байгаа бараанаас сонгоно уу.')
@@ -437,14 +445,21 @@ function App() {
             deliveryStatus: 'delivery',
             deliveryAddress: address,
             deliveryNote: note,
+            pin: pinValue,
           }),
         ),
       )
       syncUpdatedShipments(updates)
       setDeliveryFeedback('Хүсэлт илгээгдлээ. Манай баг хүргэлтийг бэлтгэнэ.')
+      setDeliveryPin('')
     } catch (error) {
       console.error('Хүргэлтийн хүсэлт илгээхэд алдаа', error)
-      setDeliveryError('Хүсэлт илгээхэд алдаа гарлаа. Дахин оролдоно уу.')
+      if (error?.code === 'PIN_REQUIRED') {
+        setDeliveryError(error.message || 'PIN шаардлагатай. 99205050 дугаарт залгаж PIN-ээ авна уу.')
+        setPinHint('99205050 дугаарт залгаж PIN-ээ авсны дараа доор оруулж дахин илгээнэ үү.')
+      } else {
+        setDeliveryError('Хүсэлт илгээхэд алдаа гарлаа. Дахин оролдоно уу.')
+      }
     } finally {
       setDeliverySubmitting(false)
     }
@@ -688,6 +703,20 @@ function App() {
                           className="w-full rounded-2xl border border-[#efd2bf] bg-white px-4 py-3 text-sm text-[#3b231f] placeholder:text-[#c99a81] focus:outline-none"
                         />
                       </label>
+                      <label className="block space-y-2">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-[#4d2d25]">PIN</span>
+                        <input
+                          type="text"
+                          value={deliveryPin}
+                          onChange={(event) => setDeliveryPin(event.target.value)}
+                          placeholder="4 оронтой PIN..."
+                          maxLength={6}
+                          className="w-full rounded-2xl border border-[#efd2bf] bg-white px-4 py-3 text-sm text-[#3b231f] placeholder:text-[#c99a81] focus:outline-none"
+                        />
+                        <p className="text-[11px] text-[#a57163]">
+                          Анх удаа хүсэлт илгээхэд PIN үүсэж, 99205050 дугаарт залгаж аваад энд оруулна.
+                        </p>
+                      </label>
                       <label className="block space-y-2 sm:col-span-2">
                         <span className="text-xs font-semibold uppercase tracking-wide text-[#4d2d25]">
                           Хүргэлтийн хаяг
@@ -717,6 +746,11 @@ function App() {
                     {deliveryError ? (
                       <div className="rounded-2xl border border-[#f7c8c8] bg-[#fff2f2] px-4 py-3 text-sm font-semibold text-[#b42318]">
                         {deliveryError}
+                      </div>
+                    ) : null}
+                    {pinHint ? (
+                      <div className="rounded-2xl border border-[#ffe0a3] bg-[#fff8eb] px-4 py-3 text-sm font-semibold text-[#8a5b00]">
+                        {pinHint}
                       </div>
                     ) : null}
                     {deliveryFeedback ? (

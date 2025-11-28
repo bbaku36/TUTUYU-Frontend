@@ -16,6 +16,7 @@ const toUi = (row) => {
     id: row.id,
     tracking: row.barcode,
     phone: row.phone || '',
+    pin: row.pin || row.pin_plain || '',
     customerName: row.customer_name || '',
     quantity: Number(row.quantity) || 1,
     weight: Number(row.weight) || 0,
@@ -46,6 +47,7 @@ const toApi = (record) => ({
   arrival_date: record.arrivalDate || new Date().toISOString().slice(0, 10),
   notes: record.deliveryAddress || '',
   delivery_note: record.deliveryNote || '',
+  pin: record.pin || record.deliveryPin || record.pinCode || '',
 })
 
 async function request(path, options = {}) {
@@ -54,15 +56,24 @@ async function request(path, options = {}) {
     ...options,
   })
   if (!res.ok) {
-    const message = await res.text()
-    throw new Error(message || `Request failed ${res.status}`)
+    const text = await res.text()
+    let parsed
+    try {
+      parsed = JSON.parse(text)
+    } catch {
+      parsed = null
+    }
+    const err = new Error(parsed?.message || text || `Request failed ${res.status}`)
+    if (parsed?.code) err.code = parsed.code
+    throw err
   }
   if (res.status === 204) return null
   return res.json()
 }
 
 export async function listShipments() {
-  const data = await request('/api/shipments')
+  // Илүү олон мөр авахын тулд өндөр limit.
+  const data = await request('/api/shipments?limit=500')
   return (data?.data || []).map(toUi)
 }
 

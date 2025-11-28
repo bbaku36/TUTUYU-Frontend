@@ -73,6 +73,7 @@ export default function AdminList({
                   <p className="text-xs text-[#8a6455]">
                     Нийт: {group.items.length} · Үлдэгдэл: {formatCurrency(group.balance)}
                   </p>
+                  <p className="text-xs text-[#8a6455]">PIN: {group.pin || '—'}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <input

@@ -372,7 +372,9 @@ export default function AdminPanel({
     visibleRecords.forEach((record) => {
       const key = record.phone?.trim() || 'Дугаар оруулаагүй'
       if (!map[key]) {
-        map[key] = { phone: key, items: [], total: 0, paid: 0, balance: 0 }
+        map[key] = { phone: key, pin: record.pin || '', items: [], total: 0, paid: 0, balance: 0 }
+      } else if (!map[key].pin && record.pin) {
+        map[key].pin = record.pin
       }
       const amount = amountOf(record)
       const paid = Number(record.paidAmount) || 0
