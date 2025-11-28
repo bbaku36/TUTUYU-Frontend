@@ -228,6 +228,8 @@ export default function AdminPanel({
         location: targetLocation,
         deliveryStatus: targetLocation === 'delivery' ? 'delivery' : 'warehouse',
         deliveryAddress: address,
+        admin: true,
+        adminBypass: true,
       })
       syncRecord(updated)
     }
@@ -245,6 +247,8 @@ export default function AdminPanel({
         ...record,
         location: 'delivery',
         deliveryStatus: nextStatus,
+        admin: true,
+        adminBypass: true,
       })
       syncRecord(updated)
     }
@@ -601,22 +605,25 @@ const navItems = [
 ]
 
   return (
-    <div className="flex gap-6">
-      <aside className=" shrink-0 rounded-3xl bg-white/90 p-4 text-[#2f1f1a] shadow-xl shadow-[#e2a07d33]">
-        <div className="rounded-2xl bg-gradient-to-r from-[#CDA799] to-[#CDA799] px-4 py-4 text-white">
-          <p className="text-sm opacity-80">Админ</p>
+    <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
+      <aside className="w-full shrink-0 rounded-3xl bg-white/90 p-4 text-[#2f1f1a] shadow-xl shadow-[#e2a07d33] lg:w-72">
+        <div className="flex flex-col gap-2 rounded-2xl bg-gradient-to-r from-[#CDA799] to-[#CDA799] px-4 py-4 text-white">
+          <div className="flex items-center justify-between">
+            <p className="text-sm opacity-80">Админ</p>
+            <span className="rounded-full bg-white/20 px-2 py-1 text-xs">Mobile friendly</span>
+          </div>
           <p className="text-xl font-semibold">TUTUYU Cargo</p>
         </div>
-        <nav className="mt-4 space-y-2">
+        <nav className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:block lg:space-y-2">
           {navItems.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => setActiveSection(item.id)}
-              className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${
+              className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-semibold transition sm:text-sm ${
                 activeSection === item.id
                   ? 'bg-[#CDA799] text-white shadow-lg shadow-[#0f513240]'
-                : 'bg-white text-[#2f1f1a] hover:bg-white/90 border border-[#f0d9c5]'
+                  : 'bg-white text-[#2f1f1a] hover:bg-white/90 border border-[#f0d9c5]'
               }`}
             >
               <span className="flex items-center gap-2">
@@ -631,24 +638,24 @@ const navItems = [
             </button>
           ))}
         </nav>
-        <div className="mt-6 space-y-2 rounded-2xl border border-[#e8d2c4] bg-white/70 p-3 text-sm text-[#6f4a3b]">
-          <p className="text-xs uppercase text-[#b27b66]">Нийлбэр</p>
-          <p>
+        <div className="mt-4 grid grid-cols-2 gap-2 lg:mt-6 lg:space-y-2 lg:rounded-2xl lg:border lg:border-[#e8d2c4] lg:bg-white/70 lg:p-3 lg:text-sm lg:text-[#6f4a3b]">
+          <p className="text-[11px] uppercase text-[#b27b66] lg:col-span-2">Нийлбэр</p>
+          <p className="text-xs lg:text-sm">
             Ачаа: <span className="font-semibold text-[#3b231f]">{documentTotals.count}</span>
           </p>
-          <p>
+          <p className="text-xs lg:text-sm">
             Нийт үнэ: <span className="font-semibold text-[#3b231f]">{formatCurrency(totals.amount)}</span>
           </p>
-          <p>
+          <p className="text-xs lg:text-sm">
             Төлсөн: <span className="font-semibold text-[#3b231f]">{formatCurrency(totals.paid)}</span>
           </p>
-          <p>
+          <p className="text-xs lg:text-sm">
             Үлдэгдэл: <span className="font-semibold text-[#c24b34]">{formatCurrency(documentTotals.balance)}</span>
           </p>
         </div>
       </aside>
 
-      <div className="flex-1 min-w-0 space-y-6 rounded-3xl bg-white/80 p-6 shadow-xl shadow-[#f1c6a255]">
+      <div className="flex-1 min-w-0 space-y-4 rounded-3xl bg-white/80 p-4 shadow-xl shadow-[#f1c6a255] sm:p-5 lg:p-6">
         {newDeliveryCount > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#f7c8c8] bg-[#fff2f2] px-4 py-3 text-sm text-[#8d6457]">
             <div>

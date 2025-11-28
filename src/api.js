@@ -1,4 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+const ADMIN_PIN_SECRET =
+  import.meta.env.VITE_ADMIN_PIN_SECRET || import.meta.env.VITE_PIN_SECRET || 'tutuyu-pin-secret'
 
 const toUi = (row) => {
   const paidAmount = Number(row.paid_amount) || 0
@@ -25,7 +27,7 @@ const toUi = (row) => {
     balance,
     status,
     deliveryStatus,
-    location: row.location || 'warehouse',
+    location: row.location || (deliveryStatus === 'delivery' ? 'delivery' : 'warehouse'),
     arrivalDate: row.arrival_date || '',
     deliveryAddress: row.notes || '',
     deliveryNote: row.delivery_note || '',
@@ -33,21 +35,25 @@ const toUi = (row) => {
   }
 }
 
+const normalizePhone = (phone) => (phone || '').toString().replace(/\D+/g, '')
+
 const toApi = (record) => ({
   barcode: record.tracking?.trim().toUpperCase(),
-  phone: record.phone || '',
+  phone: normalizePhone(record.phone),
   customer_name: record.customerName || '',
   quantity: Number(record.quantity) || 1,
   weight: Number(record.weight) || 0,
   price: Number(record.declared) || 0,
   paid_amount: Number(record.paidAmount) || 0,
   status: record.status || 'pending',
-  delivery_status: record.deliveryStatus || 'delivery',
+  delivery_status: record.deliveryStatus || (record.location === 'delivery' ? 'delivery' : 'warehouse'),
   location: record.location || 'warehouse',
   arrival_date: record.arrivalDate || new Date().toISOString().slice(0, 10),
   notes: record.deliveryAddress || '',
   delivery_note: record.deliveryNote || '',
   pin: record.pin || record.deliveryPin || record.pinCode || '',
+  admin: record.admin === true ? true : undefined,
+  adminBypass: record.adminBypass === true ? true : undefined,
 })
 
 async function request(path, options = {}) {
@@ -57,7 +63,7 @@ async function request(path, options = {}) {
   })
   if (!res.ok) {
     const text = await res.text()
-    let parsed
+    let parsed = null
     try {
       parsed = JSON.parse(text)
     } catch {
@@ -65,6 +71,8 @@ async function request(path, options = {}) {
     }
     const err = new Error(parsed?.message || text || `Request failed ${res.status}`)
     if (parsed?.code) err.code = parsed.code
+    if (parsed?.pin) err.pin = parsed.pin
+    if (parsed?.pinCreated !== undefined) err.pinCreated = parsed.pinCreated
     throw err
   }
   if (res.status === 204) return null
@@ -72,8 +80,7 @@ async function request(path, options = {}) {
 }
 
 export async function listShipments() {
-  // Илүү олон мөр авахын тулд өндөр limit.
-  const data = await request('/api/shipments?limit=500')
+  const data = await request('/api/shipments')
   return (data?.data || []).map(toUi)
 }
 
@@ -103,6 +110,39 @@ export async function addPayment(id, amount, method = 'cash') {
     body: JSON.stringify({ amount, method }),
   })
   return { shipment: result.shipment ? toUi(result.shipment) : null, payments: result.payments || [] }
+}
+
+export async function ensurePin(phone) {
+  const body = JSON.stringify({ phone: normalizePhone(phone), admin: true })
+  return request('/api/pins/ensure', {
+    method: 'POST',
+    body,
+    headers: { 'x-admin-pin': ADMIN_PIN_SECRET },
+  })
+}
+
+export async function lookupPin(phone) {
+  const body = JSON.stringify({ phone: normalizePhone(phone) })
+  try {
+    const resp = await request(`/api/shipments?phone=${encodeURIComponent(normalizePhone(phone))}&limit=1`)
+    const fromList = resp?.data?.[0]?.pin || resp?.data?.[0]?.pin_plain
+    if (fromList) return { pin: fromList, phone: normalizePhone(phone), created: false }
+  } catch (_) {
+    // ignore, доод fallback-р орно
+  }
+  try {
+    return await request('/api/pins/lookup', {
+      method: 'POST',
+      body,
+      headers: { 'x-admin-pin': ADMIN_PIN_SECRET },
+    })
+  } catch (error) {
+    try {
+      return await ensurePin(phone)
+    } catch {
+      throw error
+    }
+  }
 }
 
 export async function fetchSections() {

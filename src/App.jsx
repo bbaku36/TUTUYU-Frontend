@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import AdminPanel from './components/AdminPanel.jsx'
-import { listShipments, fetchSections, saveSections, updateShipment } from './api.js'
+import { listShipments, fetchSections, saveSections, updateShipment, ensurePin } from './api.js'
 import {
   ADDRESS_SECTION_TITLE,
   ATTENTION_SECTION_TITLE,
@@ -324,7 +324,7 @@ function App() {
   }, [isAdminRoute])
 
   useEffect(() => {
-    const available = searchResults.filter((record) => (record.location || 'warehouse') === 'warehouse')
+    const available = searchResults.filter((record) => (record.deliveryStatus || 'warehouse') === 'warehouse')
     setSelectedForDelivery(available.map((record) => record.id))
     if (available.length) {
       setDeliveryPhone(available[0].phone || '')
@@ -334,6 +334,7 @@ function App() {
       setDeliveryAddress('')
     }
     setDeliveryPin('')
+    setPinHint('')
   }, [searchResults])
 
   const handleSectionsChange = async (next) => {
@@ -379,14 +380,21 @@ function App() {
   }, [records])
 
   const currentTab = tabs.find((tab) => tab.id === activeTab) ?? tabs[0]
-  const requestableShipments = searchResults.filter((record) => (record.location || 'warehouse') === 'warehouse')
+  const requestableShipments = searchResults.filter((record) => (record.deliveryStatus || 'warehouse') === 'warehouse')
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     const trimmed = query.trim()
     if (!trimmed) {
       setSearchResults([])
       setSearched(true)
       return
+    }
+    if (activeTab === 'phone') {
+      try {
+        await ensurePin(trimmed)
+      } catch (error) {
+        console.error('PIN үүсгэхэд алдаа', error)
+      }
     }
     const matches =
       activeTab === 'phone'
@@ -433,6 +441,10 @@ function App() {
       setDeliveryError('Хүргэлтийн хаягаа оруулна уу.')
       return
     }
+    if (!pinValue || pinValue.replace(/\s+/g, '').length < 4) {
+      setDeliveryError('Хүргэлтийн PIN (4 оронтой) заавал оруулна уу. 99205050 руу залгаж PIN-ээ лавлана уу.')
+      return
+    }
 
     setDeliverySubmitting(true)
     try {
@@ -455,8 +467,14 @@ function App() {
     } catch (error) {
       console.error('Хүргэлтийн хүсэлт илгээхэд алдаа', error)
       if (error?.code === 'PIN_REQUIRED') {
-        setDeliveryError(error.message || 'PIN шаардлагатай. 99205050 дугаарт залгаж PIN-ээ авна уу.')
-        setPinHint('99205050 дугаарт залгаж PIN-ээ авсны дараа доор оруулж дахин илгээнэ үү.')
+        const baseMessage =
+          error.message || 'Хүргэлтийн PIN шаардлагатай. 99205050 дугаарт залгаж PIN-ээ лавлаад дахин илгээнэ үү.'
+        setDeliveryError(baseMessage)
+        setPinHint(
+          error.pinCreated
+            ? '4 оронтой насан туршийн хүргэлтийн PIN-ээ үүсгэлээ. 99205050 дугаарт залгаж PIN-ээ лавлаад энд оруулж дахин илгээнэ үү.'
+            : 'PIN-ээ 99205050 дугаар руу залгаж лавлаад энд оруулна уу.',
+        )
       } else {
         setDeliveryError('Хүсэлт илгээхэд алдаа гарлаа. Дахин оролдоно уу.')
       }
@@ -611,7 +629,7 @@ function App() {
                           <span>Утас: {record.phone || '—'}</span>
                           <span>Жин: {record.weight || '—'} кг</span>
                           <span>Үнэ: {record.declared || '—'}₮</span>
-                          <span>Байршил: {record.location === 'delivery' ? 'Хүргэлтэнд' : 'Агуулахад'}</span>
+                          <span>Байршил: {record.deliveryStatus === 'delivery' ? 'Хүргэлтэнд' : 'Агуулахад'}</span>
                           <span>Тоо ширхэг: {record.quantity || 1}</span>
                           <span>Нийт дүн: {record.declared ? `${amountFor(record)}₮` : '—'}</span>
                           <span>Төлбөр: {record.status === 'paid' ? 'Төлөгдсөн' : 'Хүлээгдэж байна'}</span>
@@ -714,7 +732,8 @@ function App() {
                           className="w-full rounded-2xl border border-[#efd2bf] bg-white px-4 py-3 text-sm text-[#3b231f] placeholder:text-[#c99a81] focus:outline-none"
                         />
                         <p className="text-[11px] text-[#a57163]">
-                          Анх удаа хүсэлт илгээхэд PIN үүсэж, 99205050 дугаарт залгаж аваад энд оруулна.
+                          Хүсэлт илгээхэд 4 оронтой насан туршийн PIN үүснэ. 99205050 дугаарт залгаж PIN-ээ лавлаад
+                          энд оруулж баталгаажуулна уу.
                         </p>
                       </label>
                       <label className="block space-y-2 sm:col-span-2">
