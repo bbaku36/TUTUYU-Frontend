@@ -549,8 +549,8 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-8 sm:py-12">
-      <div className={`mx-auto flex w-full flex-col gap-6 ${containerWidth}`}>
+    <div className="min-h-screen bg-gradient-to-br from-[#fff7ef] via-[#f7e0cd] to-[#f1c7a8] px-4 py-10 sm:px-6 lg:px-8">
+      <div className={`mx-auto flex w-full flex-col gap-7 ${containerWidth}`}>
         <div className="flex flex-col gap-3 rounded-3xl border border-white/60 bg-white/80 px-4 py-3 text-xs text-[#8d6457] shadow-lg sm:flex-row sm:items-center sm:justify-between sm:rounded-full sm:px-5 sm:py-2 sm:text-sm">
           <div className="flex items-center justify-between gap-2 font-semibold text-[#4d2d25] sm:justify-start">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#b5654f] text-white">TU</span>
@@ -574,91 +574,95 @@ function App() {
 
         {viewMode === 'customer' ? (
           <>
-            <HeroCard heroImage={heroImagePath} backgroundImage={heroBackgroundPath} />
+            <div className="grid gap-6 lg:grid-cols-[1.1fr,0.9fr]">
+              <HeroCard heroImage={heroImagePath} backgroundImage={heroBackgroundPath} />
 
-            <div className="flex flex-wrap gap-3">
-              {tabs.map((tab) => (
+              <div className="space-y-4 rounded-3xl border border-[#efd2bf] bg-white/90 px-5 py-5 text-sm text-[#6f4a3b] shadow-xl shadow-[#f1c6a255]">
+                <div className="flex flex-wrap gap-3">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`pill w-full sm:w-auto ${activeTab === tab.id ? 'border-[#b5654f] shadow-lg' : ''}`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                <label className="block text-sm text-[#7b5548]">
+                  <span className="sr-only">{currentTab.label}</span>
+                  <div className="rounded-2xl border border-[#efd2bf] bg-white shadow-sm">
+                    <input
+                      type="text"
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder={currentTab.placeholder}
+                      className="w-full rounded-2xl border-none bg-transparent px-4 py-3 text-base text-[#3b231f] placeholder:text-[#c99a81] focus:outline-none sm:px-5 sm:py-4"
+                    />
+                  </div>
+                  <span className="mt-2 block text-xs text-[#a57163]">{currentTab.helper}</span>
+                </label>
+
                 <button
-                  key={tab.id}
                   type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`pill w-full sm:w-auto ${activeTab === tab.id ? 'border-[#b5654f] shadow-lg' : ''}`}
+                  onClick={handleSearch}
+                  className="flex w-full items-center justify-center gap-2 rounded-3xl bg-gradient-to-r from-[#b5654f] to-[#e2a07d] px-6 py-4 text-base font-semibold text-white shadow-[0_20px_45px_rgba(181,101,79,0.35)] transition hover:-translate-y-0.5"
                 >
-                  {tab.label}
+                  <span className="text-lg">🔍</span>
+                  Статус шалгах
                 </button>
-              ))}
-            </div>
 
-            <label className="block text-sm text-[#7b5548]">
-              <span className="sr-only">{currentTab.label}</span>
-              <div className="rounded-2xl border border-[#efd2bf] bg-white shadow-sm">
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder={currentTab.placeholder}
-                  className="w-full rounded-2xl border-none bg-transparent px-4 py-3 text-base text-[#3b231f] placeholder:text-[#c99a81] focus:outline-none sm:px-5 sm:py-4"
-                />
-              </div>
-              <span className="mt-2 block text-xs text-[#a57163]">{currentTab.helper}</span>
-            </label>
-
-            <button
-              type="button"
-              onClick={handleSearch}
-              className="flex w-full items-center justify-center gap-2 rounded-3xl bg-gradient-to-r from-[#b5654f] to-[#e2a07d] px-6 py-4 text-base font-semibold text-white shadow-[0_20px_45px_rgba(181,101,79,0.35)] transition hover:-translate-y-0.5"
-            >
-              <span className="text-lg">🔍</span>
-              Статус шалгах
-            </button>
-
-            {searched && (
-              <div className="space-y-4 rounded-3xl border border-[#efd2bf] bg-white/80 px-4 py-4 text-sm text-[#6f4a3b] shadow">
-                {searchResults.length ? (
-                  <>
-                    {searchResults.map((record) => (
-                      <div
-                        key={record.id}
-                        className="rounded-2xl border border-[#efd2bf]/70 bg-white/90 px-4 py-3 text-sm"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="font-semibold text-[#3b231f]">{record.tracking}</p>
-                          <span className="text-xs text-[#8d6457]">{record.arrivalDate}</span>
+                {searched && (
+                  <div className="space-y-4 rounded-2xl border border-[#efd2bf] bg-white/80 px-4 py-4 text-sm text-[#6f4a3b] shadow">
+                    {searchResults.length ? (
+                      <>
+                        {searchResults.map((record) => (
+                          <div
+                            key={record.id}
+                            className="rounded-2xl border border-[#efd2bf]/70 bg-white/90 px-4 py-3 text-sm"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <p className="font-semibold text-[#3b231f]">{record.tracking}</p>
+                              <span className="text-xs text-[#8d6457]">{record.arrivalDate}</span>
+                            </div>
+                            <div className="mt-1 flex flex-wrap gap-4 text-xs text-[#7b5447]">
+                              <span>Утас: {record.phone || '—'}</span>
+                              <span>Жин: {record.weight || '—'} кг</span>
+                              <span>Үнэ: {record.declared || '—'}₮</span>
+                              <span>Байршил: {record.deliveryStatus === 'delivery' ? 'Хүргэлтэнд' : 'Агуулахад'}</span>
+                              <span>Тоо ширхэг: {record.quantity || 1}</span>
+                              <span>Нийт дүн: {record.declared ? `${amountFor(record)}₮` : '—'}</span>
+                              <span>Төлбөр: {record.status === 'paid' ? 'Төлөгдсөн' : 'Хүлээгдэж байна'}</span>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="rounded-2xl border border-[#efd2bf] bg-white px-4 py-3 text-sm font-semibold text-[#4d2d25]">
+                          <div className="flex flex-wrap gap-4">
+                            <span>
+                              Нийт ачаа:{' '}
+                              {searchResults.reduce((sum, record) => sum + (record.quantity || 1), 0)} ш
+                            </span>
+                            <span>Нийт үнэ: {searchResults.reduce((sum, record) => sum + amountFor(record), 0)}₮</span>
+                            <span>
+                              Үлдэгдэл төлбөр:{' '}
+                              {searchResults.reduce(
+                                (sum, record) => (record.status === 'paid' ? sum : sum + amountFor(record)),
+                                0,
+                              )}
+                              ₮
+                            </span>
+                          </div>
                         </div>
-                        <div className="mt-1 flex flex-wrap gap-4 text-xs text-[#7b5447]">
-                          <span>Утас: {record.phone || '—'}</span>
-                          <span>Жин: {record.weight || '—'} кг</span>
-                          <span>Үнэ: {record.declared || '—'}₮</span>
-                          <span>Байршил: {record.deliveryStatus === 'delivery' ? 'Хүргэлтэнд' : 'Агуулахад'}</span>
-                          <span>Тоо ширхэг: {record.quantity || 1}</span>
-                          <span>Нийт дүн: {record.declared ? `${amountFor(record)}₮` : '—'}</span>
-                          <span>Төлбөр: {record.status === 'paid' ? 'Төлөгдсөн' : 'Хүлээгдэж байна'}</span>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="rounded-2xl border border-[#efd2bf] bg-white px-4 py-3 text-sm font-semibold text-[#4d2d25]">
-                      <div className="flex flex-wrap gap-4">
-                        <span>
-                          Нийт ачаа:{' '}
-                          {searchResults.reduce((sum, record) => sum + (record.quantity || 1), 0)} ш
-                        </span>
-                        <span>Нийт үнэ: {searchResults.reduce((sum, record) => sum + amountFor(record), 0)}₮</span>
-                        <span>
-                          Үлдэгдэл төлбөр:{' '}
-                          {searchResults.reduce(
-                            (sum, record) => (record.status === 'paid' ? sum : sum + amountFor(record)),
-                            0,
-                          )}
-                          ₮
-                        </span>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <p>Таны оруулсан мэдээллээр бараа олдсонгүй.</p>
+                      </>
+                    ) : (
+                      <p>Таны оруулсан мэдээллээр бараа олдсонгүй.</p>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
+            </div>
             {searchResults.length > 0 && (
               <div className="space-y-4 rounded-3xl border border-[#efd2bf] bg-white/90 px-5 py-5 text-sm text-[#6f4a3b] shadow-lg">
                 <div className="flex flex-wrap items-center justify-between gap-3">

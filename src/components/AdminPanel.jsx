@@ -605,8 +605,8 @@ const navItems = [
 ]
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
-      <aside className="w-full shrink-0 rounded-3xl bg-white/90 p-4 text-[#2f1f1a] shadow-xl shadow-[#e2a07d33] lg:w-72">
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
+      <aside className="w-full shrink-0 rounded-3xl bg-white/90 p-4 text-[#2f1f1a] shadow-xl shadow-[#e2a07d33] lg:sticky lg:top-6 lg:w-72">
         <div className="flex flex-col gap-2 rounded-2xl bg-gradient-to-r from-[#CDA799] to-[#CDA799] px-4 py-4 text-white">
           <div className="flex items-center justify-between">
             <p className="text-sm opacity-80">Админ</p>
