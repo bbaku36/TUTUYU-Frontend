@@ -326,13 +326,9 @@ function App() {
   useEffect(() => {
     const available = searchResults.filter((record) => (record.deliveryStatus || 'warehouse') === 'warehouse')
     setSelectedForDelivery(available.map((record) => record.id))
-    if (available.length) {
-      setDeliveryPhone(available[0].phone || '')
-      setDeliveryAddress(available[0].deliveryAddress || '')
-    } else {
-      setDeliveryPhone('')
-      setDeliveryAddress('')
-    }
+    setDeliveryPhone(available[0]?.phone || '')
+    setDeliveryAddress('')
+    setDeliveryNote('')
     setDeliveryPin('')
     setPinHint('')
   }, [searchResults])
