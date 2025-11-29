@@ -35,7 +35,11 @@ const toUi = (row) => {
   }
 }
 
-const normalizePhone = (phone) => (phone || '').toString().replace(/\D+/g, '')
+const normalizePhone = (phone) => {
+  const digits = (phone || '').toString().replace(/\D+/g, '')
+  if (digits.length > 8 && digits.startsWith('976')) return digits.slice(-8)
+  return digits
+}
 
 const toApi = (record) => ({
   barcode: record.tracking?.trim().toUpperCase(),
