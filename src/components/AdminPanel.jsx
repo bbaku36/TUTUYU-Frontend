@@ -11,6 +11,8 @@ import { addPayment, createShipment, setShipmentStatus, updateShipment } from '.
 import {
   ADDRESS_SECTION_TITLE,
   ATTENTION_SECTION_TITLE,
+  HERO_BACKGROUND_TITLE,
+  HERO_IMAGE_TITLE,
   PRICE_SECTION_TITLE,
   SCHEDULE_PREVIOUS_TITLES,
   SCHEDULE_SECTION_TITLE,
@@ -59,6 +61,8 @@ export default function AdminPanel({
   const [scheduleInfo, setScheduleInfo] = useState('')
   const [attentionInfo, setAttentionInfo] = useState('')
   const [scheduleImage, setScheduleImage] = useState('')
+  const [heroImage, setHeroImage] = useState('')
+  const [heroBackground, setHeroBackground] = useState('')
   const [copiedKey, setCopiedKey] = useState('')
 
   // Нийт үнэ = зарласан үнэ (тоо ширхэгтэй хамааралгүй)
@@ -442,12 +446,20 @@ export default function AdminPanel({
 
     const scheduleSection = sections.find((item) => scheduleTitles.includes(item.title))
     setScheduleImage(scheduleSection?.image || '')
+    const heroImageSection = sections.find((item) => item.title === HERO_IMAGE_TITLE)
+    const heroBackgroundSection = sections.find((item) => item.title === HERO_BACKGROUND_TITLE)
+    setHeroImage(heroImageSection?.image || '')
+    setHeroBackground(heroBackgroundSection?.image || '')
   }, [sections])
 
   const handleCustomerContentSave = async (options = {}) => {
     const scheduleImageValue = Object.prototype.hasOwnProperty.call(options, 'scheduleImage')
       ? options.scheduleImage
       : scheduleImage
+    const heroImageValue = Object.prototype.hasOwnProperty.call(options, 'heroImage') ? options.heroImage : heroImage
+    const heroBackgroundValue = Object.prototype.hasOwnProperty.call(options, 'heroBackground')
+      ? options.heroBackground
+      : heroBackground
     const addressLines = addressInfo
       .split('\n')
       .map((line) => line.trim())
@@ -531,8 +543,17 @@ export default function AdminPanel({
           { title: ATTENTION_SECTION_TITLE, description: attentionLines.length ? attentionLines : [''], image: '' },
         ]
 
+    const withoutHero = withAttention.filter(
+      (section) => ![HERO_IMAGE_TITLE, HERO_BACKGROUND_TITLE].includes(section.title),
+    )
+    const withHero = [
+      ...withoutHero,
+      { title: HERO_IMAGE_TITLE, description: [], image: heroImageValue || '' },
+      { title: HERO_BACKGROUND_TITLE, description: [], image: heroBackgroundValue || '' },
+    ]
+
     try {
-      await onSectionsChange(withAttention)
+      await onSectionsChange(withHero)
       setToast('Хэрэглэгчийн мэдээлэл хадгалагдлаа.')
     } catch (error) {
       console.error('Контент хадгалах үед алдаа', error)
@@ -566,7 +587,7 @@ export default function AdminPanel({
   }, [records])
 
   const deliveryVisibleCount = useMemo(
-    () => deliveryGroups.reduce((sum, group) => sum + group.items.length, 0),
+    () => deliveryGroups.length,
     [deliveryGroups],
   )
 
@@ -692,6 +713,10 @@ const navItems = [
             scheduleImage={scheduleImage}
             onScheduleImageChange={setScheduleImage}
             onClearScheduleImage={handleClearScheduleImage}
+            heroImage={heroImage}
+            setHeroImage={setHeroImage}
+            heroBackground={heroBackground}
+            setHeroBackground={setHeroBackground}
             attentionInfo={attentionInfo}
             setAttentionInfo={setAttentionInfo}
             addressLines={addressLines}
@@ -707,18 +732,19 @@ const navItems = [
             filterPhone={filterPhone}
             setFilterPhone={setFilterPhone}
             filterTracking={filterTracking}
-            setFilterTracking={setFilterTracking}
-            documentTotals={documentTotals}
-            documentPageRecords={documentPageRecords}
-            documentRecords={documentRecords}
-            documentPage={documentPage}
-            documentPageCount={documentPageCount}
-            documentPageSize={documentPageSize}
-            formatCurrency={formatCurrency}
-            formatDate={formatDate}
-            StatusChip={StatusChip}
-            deliveryStatusOptions={deliveryStatusOptions}
-            handleDeliveryChange={handleDeliveryChange}
+          setFilterTracking={setFilterTracking}
+          documentTotals={documentTotals}
+          documentPageRecords={documentPageRecords}
+          documentRecords={documentRecords}
+          documentPage={documentPage}
+          documentPageCount={documentPageCount}
+          documentPageSize={documentPageSize}
+          setDocumentPage={setDocumentPage}
+          formatCurrency={formatCurrency}
+          formatDate={formatDate}
+          StatusChip={StatusChip}
+          deliveryStatusOptions={deliveryStatusOptions}
+          handleDeliveryChange={handleDeliveryChange}
             updateRecordStatus={updateRecordStatus}
             payRemaining={payRemaining}
             amountOf={amountOf}

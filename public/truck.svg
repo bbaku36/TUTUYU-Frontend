@@ -1,0 +1,50 @@
+<svg
+  width="512"
+  height="256"
+  viewBox="0 0 512 256"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- Ачааны хайрцаг (бренд хэсэг) -->
+  <rect x="60" y="90" width="250" height="90" rx="12" fill="#FF9800"/>
+
+  <!-- TUTUYU бичиг -->
+  <text
+    x="185"
+    y="140"
+    text-anchor="middle"
+    font-size="32"
+    font-family="Arial, sans-serif"
+    font-weight="bold"
+    fill="#FFFFFF"
+  >
+    TUTUYU
+  </text>
+
+  <!-- Кабиных хэсэг -->
+  <rect x="290" y="110" width="120" height="70" rx="14" fill="#424242"/>
+
+  <!-- Кабиных дээвэр (жаахан налуу) -->
+  <polygon points="290,110 330,70 410,70 410,110" fill="#424242"/>
+
+  <!-- Цонх -->
+  <polygon points="332,76 402,76 402,110 318,110" fill="#ECEFF1"/>
+
+  <!-- Гэрэл -->
+  <rect x="404" y="140" width="16" height="12" rx="3" fill="#FFEB3B"/>
+
+  <!-- Доод суурь -->
+  <rect x="80" y="180" width="340" height="12" fill="#616161"/>
+
+  <!-- Дугуйнууд -->
+  <circle cx="120" cy="200" r="24" fill="#263238"/>
+  <circle cx="120" cy="200" r="12" fill="#CFD8DC"/>
+
+  <circle cx="240" cy="200" r="24" fill="#263238"/>
+  <circle cx="240" cy="200" r="12" fill="#CFD8DC"/>
+
+  <circle cx="350" cy="200" r="24" fill="#263238"/>
+  <circle cx="350" cy="200" r="12" fill="#CFD8DC"/>
+
+  <!-- Сүүдэр -->
+  <ellipse cx="230" cy="218" rx="190" ry="10" fill="#000000" opacity="0.13"/>
+</svg>

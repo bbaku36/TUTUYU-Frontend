@@ -36,6 +36,7 @@ const toUi = (row) => {
 }
 
 const normalizePhone = (phone) => (phone || '').toString().replace(/\D+/g, '')
+const normalizePin = (pin) => (pin || '').toString().replace(/\D+/g, '')
 
 const toApi = (record) => ({
   barcode: record.tracking?.trim().toUpperCase(),
@@ -51,7 +52,7 @@ const toApi = (record) => ({
   arrival_date: record.arrivalDate || new Date().toISOString().slice(0, 10),
   notes: record.deliveryAddress || '',
   delivery_note: record.deliveryNote || '',
-  pin: record.pin || record.deliveryPin || record.pinCode || '',
+  pin: normalizePin(record.pin || record.deliveryPin || record.pinCode || ''),
   admin: record.admin === true ? true : undefined,
   adminBypass: record.adminBypass === true ? true : undefined,
 })
@@ -124,12 +125,14 @@ export async function ensurePin(phone) {
 export async function lookupPin(phone) {
   const body = JSON.stringify({ phone: normalizePhone(phone) })
   try {
+    // Эхлээд shipments API-гаас (жагсаалт дээрхтэй адил) PIN-ийг авч үзнэ.
     const resp = await request(`/api/shipments?phone=${encodeURIComponent(normalizePhone(phone))}&limit=1`)
     const fromList = resp?.data?.[0]?.pin || resp?.data?.[0]?.pin_plain
     if (fromList) return { pin: fromList, phone: normalizePhone(phone), created: false }
   } catch (_) {
-    // ignore, доод fallback-р орно
+    // ignore, fallback доош
   }
+  // Fallback: dedicated lookup эсвэл ensurePin.
   try {
     return await request('/api/pins/lookup', {
       method: 'POST',

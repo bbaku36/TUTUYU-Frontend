@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import AdminPanel from './components/AdminPanel.jsx'
 import { listShipments, fetchSections, saveSections, updateShipment, ensurePin } from './api.js'
 import {
   ADDRESS_SECTION_TITLE,
   ATTENTION_SECTION_TITLE,
+  HERO_BACKGROUND_TITLE,
+  HERO_IMAGE_TITLE,
   PRICE_SECTION_TITLE,
   SCHEDULE_PREVIOUS_TITLES,
   SCHEDULE_SECTION_TITLE,
@@ -31,8 +33,8 @@ const defaultAccordionSections = [
   { title: ATTENTION_SECTION_TITLE, description: [], image: '' },
 ]
 
-const heroImagePath = '/ChatGPT Image Nov 25, 2025, 05_55_16 PM.png'
-const heroBackgroundPath = '/ChatGPT Image Nov 25, 2025, 07_33_58 PM.png'
+const defaultHeroImage = '/ChatGPT Image Nov 25, 2025, 05_55_16 PM.png'
+const defaultHeroBackground = '/ChatGPT Image Nov 25, 2025, 07_33_58 PM.png'
 const ADMIN_AUTH_KEY = 'tutuyu-admin-auth'
 const ADMIN_LOCK_KEY = 'tutuyu-admin-lock'
 const ADMIN_MAX_ATTEMPTS = 5
@@ -73,7 +75,7 @@ const HeroCard = ({ heroImage, backgroundImage }) => (
           <p className="mt-4 text-sm text-[#70483a] sm:text-base">
 Бид БНХАУ-аас Улаанбаатар хот хүртэл хурдан шуурхай, найдвартай карго тээврийн үйлчилгээг үзүүлж байна. Жижиг, том бүх төрлийн ачаа барааг аюулгүй, хариуцлагатайгаар тээвэрлэж, таны гарт цаг хугацаанд нь хүргэнэ. Хувь хүн болон албан байгууллагын бүх төрлийн захиалгыг тогтмол хүлээн авч байна.
 
-
+        
           
           </p>
         </div>
@@ -245,18 +247,31 @@ function App() {
   const [deliveryFeedback, setDeliveryFeedback] = useState('')
   const [deliveryError, setDeliveryError] = useState('')
   const [pinHint, setPinHint] = useState('')
-  const [newDeliveryIds, setNewDeliveryIds] = useState([])
+  const [newDeliveryPhones, setNewDeliveryPhones] = useState([])
   const [isAdminAuthed, setIsAdminAuthed] = useState(false)
+  const [showDeliveryForm, setShowDeliveryForm] = useState(false)
   const [adminUserInput, setAdminUserInput] = useState('')
   const [adminPassInput, setAdminPassInput] = useState('')
   const [adminError, setAdminError] = useState('')
   const [adminAttempts, setAdminAttempts] = useState(0)
   const [adminLockedUntil, setAdminLockedUntil] = useState(0)
-  const seenDeliveryIdsRef = useRef(new Set())
+  const seenDeliveryPhonesRef = useRef(new Set())
   const hasInitializedDeliveryRef = useRef(false)
   const amountFor = (record) => (Number(record.declared) || 0) * (record.quantity || 1)
   const viewMode = isAdminRoute ? 'admin' : 'customer'
   const containerWidth = viewMode === 'admin' ? 'max-w-6xl' : 'max-w-5xl'
+  const heroImage = useMemo(
+    () => sections.find((section) => section.title === HERO_IMAGE_TITLE)?.image || defaultHeroImage,
+    [sections],
+  )
+  const heroBackground = useMemo(
+    () => sections.find((section) => section.title === HERO_BACKGROUND_TITLE)?.image || defaultHeroBackground,
+    [sections],
+  )
+  const customerSections = useMemo(
+    () => sections.filter((section) => ![HERO_IMAGE_TITLE, HERO_BACKGROUND_TITLE].includes(section.title)),
+    [sections],
+  )
 
   useEffect(() => {
     const load = async () => {
@@ -326,7 +341,8 @@ function App() {
   useEffect(() => {
     const available = searchResults.filter((record) => (record.deliveryStatus || 'warehouse') === 'warehouse')
     setSelectedForDelivery(available.map((record) => record.id))
-    setDeliveryPhone(available[0]?.phone || '')
+    const first = available[0] || {}
+    setDeliveryPhone(first.phone || '')
     setDeliveryAddress('')
     setDeliveryNote('')
     setDeliveryPin('')
@@ -343,36 +359,39 @@ function App() {
     }
   }
 
-  const pendingDeliveryIds = () =>
-    records
-      .filter(
-        (record) =>
-          (record.location || '') === 'delivery' &&
-          (record.deliveryStatus || record.status || '') === 'delivery' &&
-          (record.status || '') !== 'delivered',
-      )
-      .map((record) => record.id)
-      .filter(Boolean)
+  const pendingDeliveryPhones = () => {
+    const set = new Set()
+    records.forEach((record) => {
+      const inDelivery = (record.location || '') === 'delivery'
+      const pendingDelivery = (record.deliveryStatus || record.status || '') === 'delivery'
+      const notDelivered = (record.status || '') !== 'delivered'
+      if (inDelivery && pendingDelivery && notDelivered) {
+        const phoneKey = (record.phone || '').replace(/\s+/g, '') || 'Дугаар оруулаагүй'
+        set.add(phoneKey)
+      }
+    })
+    return Array.from(set)
+  }
 
   useEffect(() => {
-    const pending = pendingDeliveryIds()
-    const seen = seenDeliveryIdsRef.current
+    const pending = pendingDeliveryPhones()
+    const seen = seenDeliveryPhonesRef.current
 
-    setNewDeliveryIds((prev) => {
+    setNewDeliveryPhones((prev) => {
       if (!hasInitializedDeliveryRef.current) return []
-      const fresh = pending.filter((id) => !seen.has(id))
-      const kept = prev.filter((id) => pending.includes(id))
-      return Array.from(new Set([...kept, ...fresh]))
+      const fresh = pending.filter((phone) => !seen.has(phone))
+      const kept = prev.filter((phone) => pending.includes(phone))
+      return Array.from(new Set([...kept, ...fresh])) // phone дугаараар шинээр ирсэн хүсэлтүүд
     })
 
-    seenDeliveryIdsRef.current = new Set(pending)
+    seenDeliveryPhonesRef.current = new Set(pending)
     hasInitializedDeliveryRef.current = true
   }, [records])
 
   const clearNewDelivery = useCallback(() => {
-    const pending = pendingDeliveryIds()
-    seenDeliveryIdsRef.current = new Set(pending)
-    setNewDeliveryIds([])
+    const pending = pendingDeliveryPhones()
+    seenDeliveryPhonesRef.current = new Set(pending)
+    setNewDeliveryPhones([])
   }, [records])
 
   const currentTab = tabs.find((tab) => tab.id === activeTab) ?? tabs[0]
@@ -383,6 +402,7 @@ function App() {
     if (!trimmed) {
       setSearchResults([])
       setSearched(true)
+      setShowDeliveryForm(false)
       return
     }
     if (activeTab === 'phone') {
@@ -406,6 +426,7 @@ function App() {
 
     setSearchResults(filtered)
     setSearched(true)
+    setShowDeliveryForm(false)
   }
 
   const toggleShipmentSelection = (id) => {
@@ -427,7 +448,7 @@ function App() {
     const address = deliveryAddress.trim()
     const note = deliveryNote.trim()
     const phoneValue = deliveryPhone.trim()
-    const pinValue = deliveryPin.trim()
+    const pinDigits = deliveryPin.replace(/\D+/g, '')
 
     if (!targets.length) {
       setDeliveryError('Агуулахад байгаа бараанаас сонгоно уу.')
@@ -437,8 +458,8 @@ function App() {
       setDeliveryError('Хүргэлтийн хаягаа оруулна уу.')
       return
     }
-    if (!pinValue || pinValue.replace(/\s+/g, '').length < 4) {
-      setDeliveryError('Хүргэлтийн PIN (4 оронтой) заавал оруулна уу. 99205050 руу залгаж PIN-ээ лавлана уу.')
+    if (!pinDigits || pinDigits.length !== 4) {
+      setDeliveryError('Хүргэлтийн PIN заавал оруулна уу. 99205050 руу залгаж PIN-ээ лавлана уу.')
       return
     }
 
@@ -453,7 +474,7 @@ function App() {
             deliveryStatus: 'delivery',
             deliveryAddress: address,
             deliveryNote: note,
-            pin: pinValue,
+            pin: pinDigits,
           }),
         ),
       )
@@ -570,8 +591,8 @@ function App() {
 
         {viewMode === 'customer' ? (
           <>
-            <div className="grid gap-6 lg:grid-cols-[1.1fr,0.9fr]">
-              <HeroCard heroImage={heroImagePath} backgroundImage={heroBackgroundPath} />
+            <div className="space-y-6">
+              <HeroCard heroImage={heroImage} backgroundImage={heroBackground} />
 
               <div className="space-y-4 rounded-3xl border border-[#efd2bf] bg-white/90 px-5 py-5 text-sm text-[#6f4a3b] shadow-xl shadow-[#f1c6a255]">
                 <div className="flex flex-wrap gap-3">
@@ -607,7 +628,7 @@ function App() {
                   className="flex w-full items-center justify-center gap-2 rounded-3xl bg-gradient-to-r from-[#b5654f] to-[#e2a07d] px-6 py-4 text-base font-semibold text-white shadow-[0_20px_45px_rgba(181,101,79,0.35)] transition hover:-translate-y-0.5"
                 >
                   <span className="text-lg">🔍</span>
-                  Статус шалгах
+                  Бараа шалгах
                 </button>
 
                 {searched && (
@@ -660,144 +681,174 @@ function App() {
               </div>
             </div>
             {searchResults.length > 0 && (
-              <div className="space-y-4 rounded-3xl border border-[#efd2bf] bg-white/90 px-5 py-5 text-sm text-[#6f4a3b] shadow-lg">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-base font-semibold text-[#3b231f]">Ирсэн бараагаа хүргэлтээр авах</p>
-                    <p className="text-xs text-[#8d6457]">
-                      Агуулахад байгаа бараагаа сонгоод хүргэлтийн хаягаа үлдээгээрэй. Хүсэлт илгээснээр ачааг
-                      хүргэлтэнд шилжүүлнэ.
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-[#fbe9dd] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#b5654f]">
-                    Хүргэлтийн хүсэлт
-                  </span>
-                </div>
-
-                {requestableShipments.length ? (
-                  <>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {requestableShipments.map((record) => {
-                        const selected = selectedForDelivery.includes(record.id)
-                        return (
-                          <button
-                            key={record.id}
-                            type="button"
-                            onClick={() => toggleShipmentSelection(record.id)}
-                            className={`flex flex-col items-start gap-2 rounded-2xl border px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 ${
-                              selected
-                                ? 'border-[#b5654f] bg-gradient-to-r from-[#fff2ea] to-[#ffe5d4]'
-                                : 'border-[#efd2bf] bg-white'
-                            }`}
-                          >
-                            <div className="flex w-full items-center justify-between gap-3">
-                              <span className="font-semibold text-[#3b231f]">{record.tracking}</span>
-                              <span className="text-xs text-[#8d6457]">{record.arrivalDate || 'Ирсэн'}</span>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-3 text-xs text-[#7b5447]">
-                              <span>Тоо: {record.quantity || 1}ш</span>
-                              <span>Жин: {record.weight || '—'} кг</span>
-                              <span>Үнэ: {record.declared || '—'}₮</span>
-                              <span className="rounded-full bg-[#f2d8c6] px-2 py-0.5 text-[11px] font-semibold text-[#7b5447]">
-                                {selected ? 'Сонгосон' : 'Сонгох'}
-                              </span>
-                            </div>
-                            <p className="text-xs text-[#a57163]">Байршил: Агуулахад</p>
-                          </button>
-                        )
-                      })}
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="block space-y-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-[#4d2d25]">
-                          Хүргэлтийн утас
-                        </span>
-                        <input
-                          type="tel"
-                          value={deliveryPhone}
-                          onChange={(event) => setDeliveryPhone(event.target.value)}
-                          placeholder="Утасны дугаар..."
-                          className="w-full rounded-2xl border border-[#efd2bf] bg-white px-4 py-3 text-sm text-[#3b231f] placeholder:text-[#c99a81] focus:outline-none"
-                        />
-                      </label>
-                      <label className="block space-y-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-[#4d2d25]">PIN</span>
-                        <input
-                          type="text"
-                          value={deliveryPin}
-                          onChange={(event) => setDeliveryPin(event.target.value)}
-                          placeholder="4 оронтой PIN..."
-                          maxLength={6}
-                          className="w-full rounded-2xl border border-[#efd2bf] bg-white px-4 py-3 text-sm text-[#3b231f] placeholder:text-[#c99a81] focus:outline-none"
-                        />
-                        <p className="text-[11px] text-[#a57163]">
-                          Хүсэлт илгээхэд 4 оронтой насан туршийн PIN үүснэ. 99205050 дугаарт залгаж PIN-ээ лавлаад
-                          энд оруулж баталгаажуулна уу.
+              <>
+                {showDeliveryForm ? (
+                  <div className="space-y-4 rounded-3xl border border-[#efd2bf] bg-white/90 px-5 py-5 text-sm text-[#6f4a3b] shadow-lg">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-base font-semibold text-[#3b231f]">Ирсэн бараагаа хүргэлтээр авах</p>
+                        <p className="text-xs text-[#8d6457]">
+                          Агуулахад байгаа бараагаа сонгоод хүргэлтийн хаягаа үлдээгээрэй. Хүсэлт илгээснээр ачааг
+                          хүргэлтэнд шилжүүлнэ.
                         </p>
-                      </label>
-                      <label className="block space-y-2 sm:col-span-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-[#4d2d25]">
-                          Хүргэлтийн хаяг
-                        </span>
-                        <textarea
-                          value={deliveryAddress}
-                          onChange={(event) => setDeliveryAddress(event.target.value)}
-                          rows={3}
-                          placeholder="Дүүрэг, хороо, байр/гудамж, орц...."
-                          className="w-full rounded-2xl border border-[#efd2bf] bg-white px-4 py-3 text-sm text-[#3b231f] placeholder:text-[#c99a81] focus:outline-none"
-                        />
-                      </label>
-                      <label className="block space-y-2 sm:col-span-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-[#4d2d25]">
-                          Нэмэлт тэмдэглэл
-                        </span>
-                        <textarea
-                          value={deliveryNote}
-                          onChange={(event) => setDeliveryNote(event.target.value)}
-                          rows={2}
-                          placeholder="Орох код, цагийн хуваарь, хүлээн авах хүний нэр..."
-                          className="w-full rounded-2xl border border-[#efd2bf] bg-white px-4 py-3 text-sm text-[#3b231f] placeholder:text-[#c99a81] focus:outline-none"
-                        />
-                      </label>
+                      </div>
+                      <span className="rounded-full bg-[#fbe9dd] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#b5654f]">
+                        Хүргэлтийн хүсэлт
+                      </span>
                     </div>
 
-                    {deliveryError ? (
-                      <div className="rounded-2xl border border-[#f7c8c8] bg-[#fff2f2] px-4 py-3 text-sm font-semibold text-[#b42318]">
-                        {deliveryError}
-                      </div>
-                    ) : null}
-                    {pinHint ? (
-                      <div className="rounded-2xl border border-[#ffe0a3] bg-[#fff8eb] px-4 py-3 text-sm font-semibold text-[#8a5b00]">
-                        {pinHint}
-                      </div>
-                    ) : null}
-                    {deliveryFeedback ? (
-                      <div className="rounded-2xl border border-[#cde7da] bg-[#f3fbf6] px-4 py-3 text-sm font-semibold text-[#2f8552]">
-                        {deliveryFeedback}
-                      </div>
-                    ) : null}
+                    {requestableShipments.length ? (
+                      <>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {requestableShipments.map((record) => {
+                            const selected = selectedForDelivery.includes(record.id)
+                            return (
+                              <button
+                                key={record.id}
+                                type="button"
+                                onClick={() => toggleShipmentSelection(record.id)}
+                                className={`flex flex-col items-start gap-2 rounded-2xl border px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 ${
+                                  selected
+                                    ? 'border-[#b5654f] bg-gradient-to-r from-[#fff2ea] to-[#ffe5d4]'
+                                    : 'border-[#efd2bf] bg-white'
+                                }`}
+                              >
+                                <div className="flex w-full items-center justify-between gap-3">
+                                  <span className="font-semibold text-[#3b231f]">{record.tracking}</span>
+                                  <span className="text-xs text-[#8d6457]">{record.arrivalDate || 'Ирсэн'}</span>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3 text-xs text-[#7b5447]">
+                                  <span>Тоо: {record.quantity || 1}ш</span>
+                                  <span>Жин: {record.weight || '—'} кг</span>
+                                  <span>Үнэ: {record.declared || '—'}₮</span>
+                                  <span className="rounded-full bg-[#f2d8c6] px-2 py-0.5 text-[11px] font-semibold text-[#7b5447]">
+                                    {selected ? 'Сонгосон' : 'Сонгох'}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-[#a57163]">Байршил: Агуулахад</p>
+                              </button>
+                            )
+                          })}
+                        </div>
 
-                    <button
-                      type="button"
-                      onClick={handleDeliveryRequest}
-                      disabled={deliverySubmitting}
-                      className="flex w-full items-center justify-center gap-2 rounded-3xl bg-gradient-to-r from-[#b5654f] to-[#e2a07d] px-6 py-4 text-base font-semibold text-white shadow-[0_18px_38px_rgba(181,101,79,0.35)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      <span className="text-lg">🚚</span>
-                      {deliverySubmitting ? 'Хүсэлт илгээж байна...' : 'Хүргэлт захиалах'}
-                    </button>
-                  </>
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-[#efd2bf] bg-white px-4 py-3 text-sm text-[#8d6457]">
-                    Агуулахад хүргэлтэд бэлэн бараа алга байна. Зарим бараа аль хэдийн хүргэлтэнд шилжсэн байж
-                    магадгүй.
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <label className="block space-y-2">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-[#4d2d25]">
+                              Хүргэлтийн утас
+                            </span>
+                            <input
+                              type="tel"
+                              value={deliveryPhone}
+                              onChange={(event) => setDeliveryPhone(event.target.value)}
+                              placeholder="Утасны дугаар..."
+                              className="w-full rounded-2xl border border-[#efd2bf] bg-white px-4 py-3 text-sm text-[#3b231f] placeholder:text-[#c99a81] focus:outline-none"
+                            />
+                          </label>
+                          <label className="block space-y-2">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-[#4d2d25]">PIN</span>
+                            <input
+                              type="text"
+                              value={deliveryPin}
+                              onChange={(event) => {
+                                const digitsOnly = event.target.value.replace(/\D+/g, '')
+                                setDeliveryPin(digitsOnly)
+                              }}
+                              placeholder="4 оронтой PIN..."
+                              maxLength={4}
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              className="w-full rounded-2xl border border-[#efd2bf] bg-white px-4 py-3 text-sm text-[#3b231f] placeholder:text-[#c99a81] focus:outline-none"
+                            />
+                            <p className="text-[11px] text-[#a57163]">
+                              Хүсэлт илгээхэд 4 оронтой насан туршийн PIN үүснэ. 99205050 дугаарт залгаж PIN-ээ
+                              лавлаад энд оруулж баталгаажуулна уу.
+                            </p>
+                          </label>
+                          <label className="block space-y-2 sm:col-span-2">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-[#4d2d25]">
+                              Хүргэлтийн хаяг
+                            </span>
+                            <textarea
+                              value={deliveryAddress}
+                              onChange={(event) => setDeliveryAddress(event.target.value)}
+                              rows={3}
+                              placeholder="Дүүрэг, хороо, байр/гудамж, орц...."
+                              className="w-full rounded-2xl border border-[#efd2bf] bg-white px-4 py-3 text-sm text-[#3b231f] placeholder:text-[#c99a81] focus:outline-none"
+                            />
+                          </label>
+                          <label className="block space-y-2 sm:col-span-2">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-[#4d2d25]">
+                              Нэмэлт тэмдэглэл
+                            </span>
+                            <textarea
+                              value={deliveryNote}
+                              onChange={(event) => setDeliveryNote(event.target.value)}
+                              rows={2}
+                              placeholder="Орох код, цагийн хуваарь, хүлээн авах хүний нэр..."
+                              className="w-full rounded-2xl border border-[#efd2bf] bg-white px-4 py-3 text-sm text-[#3b231f] placeholder:text-[#c99a81] focus:outline-none"
+                            />
+                          </label>
+                        </div>
+
+                        {deliveryError ? (
+                          <div className="rounded-2xl border border-[#f7c8c8] bg-[#fff2f2] px-4 py-3 text-sm font-semibold text-[#b42318]">
+                            {deliveryError}
+                          </div>
+                        ) : null}
+                        {pinHint ? (
+                          <div className="rounded-2xl border border-[#ffe0a3] bg-[#fff8eb] px-4 py-3 text-sm font-semibold text-[#8a5b00]">
+                            {pinHint}
+                          </div>
+                        ) : null}
+                        {deliveryFeedback ? (
+                          <div className="rounded-2xl border border-[#cde7da] bg-[#f3fbf6] px-4 py-3 text-sm font-semibold text-[#2f8552]">
+                            {deliveryFeedback}
+                          </div>
+                        ) : null}
+
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={handleDeliveryRequest}
+                            disabled={deliverySubmitting}
+                            className="flex flex-1 items-center justify-center gap-2 rounded-3xl bg-gradient-to-r from-[#b5654f] to-[#e2a07d] px-6 py-4 text-base font-semibold text-white shadow-[0_18px_38px_rgba(181,101,79,0.35)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+                          >
+                            <span className="text-lg">🚚</span>
+                            {deliverySubmitting ? 'Хүсэлт илгээж байна...' : 'Хүргэлт захиалах'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowDeliveryForm(false)}
+                            className="rounded-3xl border border-[#efd2bf] px-4 py-3 text-sm font-semibold text-[#6f4a3b]"
+                          >
+                            Буцах
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-[#efd2bf] bg-white px-4 py-3 text-sm text-[#8d6457]">
+                       Таны хүргэлт 24-48 цагийн дотор хүргэгдэх болно 
+                    
+                      </div>
+                    )}
                   </div>
+                ) : (
+                  requestableShipments.length > 0 && (
+                    <div className="flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={() => setShowDeliveryForm(true)}
+                        className="flex items-center gap-2 rounded-3xl border border-[#efd2bf] bg-white px-5 py-3 text-sm font-semibold text-[#b5654f] shadow hover:-translate-y-0.5 transition"
+                      >
+                        🚚 Хүргэлтийн хүсэлт илгээх
+                      </button>
+                    </div>
+                  )
                 )}
-              </div>
+              </>
             )}
             <div className="space-y-3">
-              {sections.map((section) => (
+              {customerSections.map((section) => (
                 <AccordionItem
                   key={section.title}
                   section={section}
@@ -813,7 +864,7 @@ function App() {
             onSectionsChange={handleSectionsChange}
             records={records}
             onRecordsChange={setRecords}
-            newDeliveryCount={newDeliveryIds.length}
+            newDeliveryCount={newDeliveryPhones.length}
             onClearNewDelivery={clearNewDelivery}
           />
         ) : (

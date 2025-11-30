@@ -9,6 +9,7 @@ export default function AdminDocuments({
   documentPage,
   documentPageCount,
   documentPageSize,
+  setDocumentPage,
   formatCurrency,
   formatDate,
   StatusChip,

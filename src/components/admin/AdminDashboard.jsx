@@ -13,6 +13,10 @@ export default function AdminDashboard({
   scheduleImage,
   onScheduleImageChange,
   onClearScheduleImage,
+  heroImage,
+  setHeroImage,
+  heroBackground,
+  setHeroBackground,
   attentionInfo,
   setAttentionInfo,
   addressLines,
@@ -25,6 +29,7 @@ export default function AdminDashboard({
   const [pinResult, setPinResult] = useState('')
   const [pinError, setPinError] = useState('')
   const [pinLoading, setPinLoading] = useState(false)
+  const [heroFeedback, setHeroFeedback] = useState('')
 
   const handlePinLookup = async (event) => {
     event.preventDefault()
@@ -49,6 +54,67 @@ export default function AdminDashboard({
       setPinError(`PIN лавлахад алдаа гарлаа: ${error.message || ''}`)
     } finally {
       setPinLoading(false)
+    }
+  }
+
+  const compressImage = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const img = new Image()
+        img.onload = () => {
+          const maxEdge = 1800
+          const scale = Math.min(1, maxEdge / Math.max(img.width, img.height))
+          const width = Math.round(img.width * scale)
+          const height = Math.round(img.height * scale)
+          const canvas = document.createElement('canvas')
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0, width, height)
+          const isPng = file.type === 'image/png'
+          const quality = isPng ? 0.92 : 0.88
+          resolve(canvas.toDataURL(file.type || 'image/jpeg', quality))
+        }
+        img.onerror = reject
+        img.src = reader.result
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+
+  const handleHeroUpload = async (event, target) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const input = event.target
+    try {
+      const dataUrl = await compressImage(file)
+      if (target === 'main') {
+        setHeroImage(dataUrl)
+        setHeroFeedback('Нүүрний зураг шинэчлэгдлээ.')
+        if (handleCustomerContentSave) handleCustomerContentSave({ heroImage: dataUrl })
+      } else {
+        setHeroBackground(dataUrl)
+        setHeroFeedback('Дэвсгэр зураг шинэчлэгдлээ.')
+        if (handleCustomerContentSave) handleCustomerContentSave({ heroBackground: dataUrl })
+      }
+    } catch (error) {
+      console.error('Зураг шахахад алдаа', error)
+      setHeroFeedback('Зураг боловсруулах үед алдаа гарлаа. Дахин оруулж үзнэ үү.')
+    } finally {
+      if (input) input.value = ''
+    }
+  }
+
+  const handleHeroClear = (target) => {
+    if (target === 'main') {
+      setHeroImage('')
+      if (handleCustomerContentSave) handleCustomerContentSave({ heroImage: '' })
+      setHeroFeedback('Нүүрний зураг устгагдлаа.')
+    } else {
+      setHeroBackground('')
+      if (handleCustomerContentSave) handleCustomerContentSave({ heroBackground: '' })
+      setHeroFeedback('Дэвсгэр зураг устгагдлаа.')
     }
   }
 
@@ -110,6 +176,70 @@ export default function AdminDashboard({
         <p className="text-xs text-[#8a6455]">
           Утасны дугаарт тохирох 4 оронтой PIN-ийг эндээс хурдан лавлана. Байхгүй бол автоматаар үүсгээд харуулна.
         </p>
+      </div>
+
+      <div className="rounded-2xl border border-[#f0d9c5] bg-white/90 p-4 shadow-sm space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-base font-semibold text-[#3b231f]">Нүүрний зургууд</h3>
+          <p className="text-xs text-[#8a6455]">1800px дотор шахаж хадгална (чанар алдагдахгүй).</p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="space-y-2 rounded-xl border border-[#efd2bf] bg-[#fff9f4] p-3">
+            <p className="text-sm font-semibold text-[#3b231f]">Гол зураг</p>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-[#f0d9c5] bg-white">
+              {heroImage ? (
+                <img src={heroImage} alt="Нүүрний зураг" className="h-full w-full object-contain" loading="lazy" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs text-[#b27b66]">Зураг байхгүй</div>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs text-[#6f4a3b]">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#e2a07d] bg-white px-3 py-1.5 font-semibold text-[#b5654f]">
+                <input type="file" accept="image/*" className="hidden" onChange={(event) => handleHeroUpload(event, 'main')} />
+                Зураг сонгох
+              </label>
+              {heroImage ? (
+                <button
+                  type="button"
+                  onClick={() => handleHeroClear('main')}
+                  className="rounded-full border border-[#f0d9c5] px-3 py-1.5 font-semibold text-[#8d6457]"
+                >
+                  Цэвэрлэх
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <div className="space-y-2 rounded-xl border border-[#efd2bf] bg-[#fff9f4] p-3">
+            <p className="text-sm font-semibold text-[#3b231f]">Дэвсгэр зураг</p>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-[#f0d9c5] bg-white">
+              {heroBackground ? (
+                <img src={heroBackground} alt="Дэвсгэр зураг" className="h-full w-full object-cover" loading="lazy" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs text-[#b27b66]">Зураг байхгүй</div>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs text-[#6f4a3b]">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#e2a07d] bg-white px-3 py-1.5 font-semibold text-[#b5654f]">
+                <input type="file" accept="image/*" className="hidden" onChange={(event) => handleHeroUpload(event, 'bg')} />
+                Зураг сонгох
+              </label>
+              {heroBackground ? (
+                <button
+                  type="button"
+                  onClick={() => handleHeroClear('bg')}
+                  className="rounded-full border border-[#f0d9c5] px-3 py-1.5 font-semibold text-[#8d6457]"
+                >
+                  Цэвэрлэх
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+        {heroFeedback ? (
+          <p className="text-xs font-semibold text-[#b5654f]">{heroFeedback}</p>
+        ) : (
+          <p className="text-xs text-[#8a6455]">JPG/PNG, web-д ээлтэй шахалттайгаар хадгална.</p>
+        )}
       </div>
 
       <CustomerContentPanel

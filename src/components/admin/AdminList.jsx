@@ -201,6 +201,10 @@ export default function AdminList({
                   deliveryGroupAddresses[group.phone] ||
                   '—'}
               </div>
+              <div className="text-xs text-[#3b231f] mt-1">
+                <span className="font-semibold">Нэмэлт: </span>
+                {group.items.find((it) => it.deliveryNote)?.deliveryNote || '—'}
+              </div>
 
               <div className="mt-3 overflow-x-auto">
                 <table className="min-w-[720px] text-left text-sm text-[#3b231f]">

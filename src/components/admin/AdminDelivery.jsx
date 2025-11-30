@@ -133,15 +133,19 @@ export default function AdminDelivery({
                   </div>
                 )
               })()}
-              <div className="text-xs text-[#3b231f]">
-                <span className="font-semibold">Хаяг: </span>
-                {group.address || '—'}
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-[720px] text-left text-sm text-[#3b231f]">
-                  <thead className="bg-[#f8efe6] text-xs uppercase text-[#8a6455] whitespace-nowrap">
-                    <tr>
-                      <th className="px-3 py-2">Бар код</th>
+          <div className="text-xs text-[#3b231f]">
+            <span className="font-semibold">Хаяг: </span>
+            {group.address || '—'}
+          </div>
+          <div className="text-xs text-[#3b231f]">
+            <span className="font-semibold">Нэмэлт: </span>
+            {group.items.find((item) => item.deliveryNote)?.deliveryNote || '—'}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-[720px] text-left text-sm text-[#3b231f]">
+              <thead className="bg-[#f8efe6] text-xs uppercase text-[#8a6455] whitespace-nowrap">
+                <tr>
+                  <th className="px-3 py-2">Бар код</th>
                       <th className="px-3 py-2">Үнэ</th>
                       <th className="px-3 py-2">Үлдэгдэл</th>
                       <th className="px-3 py-2">Хүргэлт</th>
