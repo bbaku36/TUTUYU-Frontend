@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color: theme('colors.midnight');
+    background-color: theme('colors.saffron');
+  }
+
+  body {
+    @apply min-h-screen bg-gradient-to-br from-[#fff6ef] via-[#f5d9c6] to-[#e7bfa5] text-[#3f2a24] font-sans;
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+}
+
+@layer components {
+  .pill {
+    @apply rounded-full border border-[#f0d9c5] bg-white px-4 py-2 text-sm font-semibold text-[#6a4236] shadow-sm transition hover:-translate-y-0.5 hover:shadow;
+  }
+}
