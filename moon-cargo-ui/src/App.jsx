@@ -33,7 +33,7 @@ const defaultAccordionSections = [
   { title: ATTENTION_SECTION_TITLE, description: [], image: '' },
 ]
 
-const defaultHeroImage = '/ChatGPT Image Nov 25, 2025, 05_55_16 PM.png'
+const defaultHeroImage = '/cargo.png'
 const defaultHeroBackground = '/ChatGPT Image Nov 25, 2025, 07_33_58 PM.png'
 const ADMIN_AUTH_KEY = 'tutuyu-admin-auth'
 const ADMIN_LOCK_KEY = 'tutuyu-admin-lock'
