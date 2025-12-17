@@ -1,5 +1,11 @@
 {
   "buildCommand": "cd moon-cargo-ui && npm install && npm run build",
   "outputDirectory": "moon-cargo-ui/dist",
-  "installCommand": "cd moon-cargo-ui && npm install"
+  "installCommand": "cd moon-cargo-ui && npm install",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
