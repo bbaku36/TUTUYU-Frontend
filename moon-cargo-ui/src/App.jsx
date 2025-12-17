@@ -34,7 +34,7 @@ const defaultAccordionSections = [
 ]
 
 const defaultHeroImage = '/cargo.png'
-const defaultHeroBackground = '/ChatGPT Image Nov 25, 2025, 07_33_58 PM.png'
+const defaultHeroBackground = '/cargoBackground.png'
 const ADMIN_AUTH_KEY = 'tutuyu-admin-auth'
 const ADMIN_LOCK_KEY = 'tutuyu-admin-lock'
 const ADMIN_MAX_ATTEMPTS = 5
