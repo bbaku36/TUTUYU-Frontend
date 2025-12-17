@@ -1,17 +1,12 @@
 {
   "name": "cargo-backend",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node src/server.js",
-    "seed": "node src/seed.js"
+    "start": "supabase start",
+    "deploy": "supabase functions deploy"
   },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "pg": "^8.12.0",
-    "postgres": "^3.4.7"
-  }
+  "dependencies": {},
+  "devDependencies": {}
 }

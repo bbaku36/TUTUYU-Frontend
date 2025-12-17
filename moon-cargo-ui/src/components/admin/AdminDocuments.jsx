@@ -1,3 +1,5 @@
+import { useState, useMemo } from 'react'
+
 export default function AdminDocuments({
   filterPhone,
   setFilterPhone,
@@ -6,6 +8,7 @@ export default function AdminDocuments({
   documentTotals,
   documentPageRecords,
   documentRecords,
+  archivedRecords,
   documentPage,
   documentPageCount,
   documentPageSize,
@@ -19,7 +22,71 @@ export default function AdminDocuments({
   payRemaining,
   amountOf,
   onOpenPayments,
+  exportToExcel,
+  fetchArchivedRecords,
 }) {
+  const [showArchived, setShowArchived] = useState(false)
+  const [archivedData, setArchivedData] = useState([])
+  const [loadingArchive, setLoadingArchive] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [exportStartDate, setExportStartDate] = useState('')
+  const [exportEndDate, setExportEndDate] = useState('')
+  
+  const handleToggleArchive = async () => {
+    if (!showArchived && archivedData.length === 0) {
+      // First time showing archive - fetch data
+      setLoadingArchive(true)
+      try {
+        const data = await fetchArchivedRecords()
+        setArchivedData(data)
+      } catch (error) {
+        console.error('Failed to load archive:', error)
+      } finally {
+        setLoadingArchive(false)
+      }
+    }
+    setShowArchived(!showArchived)
+  }
+  
+  const handleExportWithFilter = () => {
+    let filtered = displayRecords
+    
+    if (exportStartDate || exportEndDate) {
+      filtered = displayRecords.filter(r => {
+        const recordDate = new Date(r.createdAt)
+        const start = exportStartDate ? new Date(exportStartDate) : null
+        const end = exportEndDate ? new Date(exportEndDate) : null
+        
+        if (start && recordDate < start) return false
+        if (end) {
+          const endOfDay = new Date(end)
+          endOfDay.setHours(23, 59, 59, 999)
+          if (recordDate > endOfDay) return false
+        }
+        return true
+      })
+    }
+    
+    if (filtered.length === 0) {
+      alert('Сонгосон хугацаанд бараа алга')
+      return
+    }
+    
+    exportToExcel(filtered, showArchived ? 'tutuyu-archive' : 'tutuyu-barimtud')
+    setShowExportModal(false)
+    setExportStartDate('')
+    setExportEndDate('')
+  }
+  
+  const displayRecords = showArchived ? archivedData : documentRecords
+  const displayPageRecords = useMemo(() => {
+    const start = (documentPage - 1) * documentPageSize
+    const end = start + documentPageSize
+    return displayRecords.slice(start, end)
+  }, [displayRecords, documentPage, documentPageSize])
+  
+  const displayPageCount = Math.max(1, Math.ceil(displayRecords.length / documentPageSize))
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
@@ -61,19 +128,48 @@ export default function AdminDocuments({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm text-[#a57163]">Барааны жагсаалт</p>
-            <h3 className="text-2xl font-semibold text-[#3b231f]">Баримтууд</h3>
+            <h3 className="text-2xl font-semibold text-[#3b231f]">
+              {showArchived ? 'Архив' : 'Баримтууд'}
+            </h3>
           </div>
           <div className="flex flex-wrap gap-2 text-sm text-[#6f4a3b]">
-            <span className="rounded-full bg-[#f5ede4] px-3 py-1">Нийт: {documentTotals.count}</span>
-            <span className="rounded-full bg-[#e7f7ef] px-3 py-1">
-              Үлдэгдэл: {formatCurrency(documentTotals.balance)}
-            </span>
+            {!showArchived && (
+              <>
+                <span className="rounded-full bg-[#f5ede4] px-3 py-1">Нийт: {documentTotals.count}</span>
+                <span className="rounded-full bg-[#e7f7ef] px-3 py-1">
+                  Үлдэгдэл: {formatCurrency(documentTotals.balance)}
+                </span>
+                <button
+                  type="button"
+                  onClick={onOpenPayments}
+                  className="rounded-full border border-[#e2a07d] bg-[#fff7f2] px-4 py-2 text-sm font-semibold text-[#b5654f]"
+                >
+                  Төлбөрийн үлдэгдэл
+                </button>
+              </>
+            )}
+            {showArchived && (
+              <span className="rounded-full bg-[#f5ede4] px-3 py-1">Архивласан: {archivedData.length}</span>
+            )}
             <button
               type="button"
-              onClick={onOpenPayments}
-              className="rounded-full border border-[#e2a07d] bg-[#fff7f2] px-4 py-2 text-sm font-semibold text-[#b5654f]"
+              onClick={() => setShowExportModal(true)}
+              className="rounded-full border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-100"
+              title="Excel татах"
             >
-              Төлбөрийн үлдэгдэл
+              📥 Excel
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleArchive}
+              disabled={loadingArchive}
+              className={`rounded-full border px-4 py-2 text-sm font-semibold ${
+                showArchived 
+                  ? 'border-[#e2a07d] bg-[#fff7f2] text-[#b5654f]'
+                  : 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100'
+              } ${loadingArchive ? 'opacity-50 cursor-wait' : ''}`}
+            >
+              {loadingArchive ? '⏳ Ачаалж байна...' : showArchived ? '📋 Баримт харах' : '📦 Архив харах'}
             </button>
           </div>
         </div>
@@ -97,14 +193,14 @@ export default function AdminDocuments({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f0e1d6] bg-white">
-              {documentRecords.length === 0 && (
+              {displayRecords.length === 0 && (
                 <tr>
                   <td colSpan="11" className="px-3 py-3 text-center text-[#9b6b58]">
-                    Өгөгдөл алга.
+                    {showArchived ? 'Архивласан бараа алга.' : 'Өгөгдөл алга.'}
                   </td>
                 </tr>
               )}
-              {documentPageRecords.map((record, index) => {
+              {displayPageRecords.map((record, index) => {
                 const total = amountOf(record)
                 const paid = Number(record.paidAmount) || 0
                 const balance = Math.max(0, total - paid)
@@ -175,10 +271,10 @@ export default function AdminDocuments({
           </table>
         </div>
 
-        {documentRecords.length > documentPageSize && (
+        {displayRecords.length > documentPageSize && (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-[#6f4a3b]">
             <p>
-              Хуудас {documentPage} / {documentPageCount}
+              Хуудас {documentPage} / {displayPageCount}
             </p>
             <div className="flex gap-2">
               <button
@@ -193,7 +289,7 @@ export default function AdminDocuments({
                 type="button"
                 onClick={() => setDocumentPage((p) => Math.min(documentPageCount, p + 1))}
                 className="rounded-full border border-[#efd2bf] px-3 py-1 text-xs font-semibold text-[#3b231f] disabled:opacity-50"
-                disabled={documentPage === documentPageCount}
+                disabled={documentPage === displayPageCount}
               >
                 Дараах
               </button>
@@ -201,6 +297,58 @@ export default function AdminDocuments({
           </div>
         )}
       </div>
+      
+      {/* Excel Export Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowExportModal(false)}>
+          <div className="bg-white rounded-2xl p-6 shadow-xl max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-semibold text-[#3b231f] mb-4">📥 Excel татах</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#7d4b3a] mb-1">Эхлэх огноо</label>
+                <input
+                  type="date"
+                  value={exportStartDate}
+                  onChange={(e) => setExportStartDate(e.target.value)}
+                  className="w-full rounded-xl border border-[#efd2bf] bg-white px-3 py-2 text-sm text-[#3b231f]"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-[#7d4b3a] mb-1">Дуусах огноо</label>
+                <input
+                  type="date"
+                  value={exportEndDate}
+                  onChange={(e) => setExportEndDate(e.target.value)}
+                  className="w-full rounded-xl border border-[#efd2bf] bg-white px-3 py-2 text-sm text-[#3b231f]"
+                />
+              </div>
+              
+              <p className="text-xs text-[#9b6b58]">
+                💡 Огноо сонгохгүй бол бүх бараа татагдана
+              </p>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setShowExportModal(false)}
+                className="flex-1 rounded-xl border border-[#efd2bf] px-4 py-2 text-sm font-semibold text-[#7d4b3a] hover:bg-[#fdf7f2]"
+              >
+                Цуцлах
+              </button>
+              <button
+                type="button"
+                onClick={handleExportWithFilter}
+                className="flex-1 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-100"
+              >
+                📥 Татах
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -270,6 +270,32 @@ export default function AdminPanel({
     }
   }
 
+  // Excel export function
+  const exportToExcel = (records, filename = 'tutuyu-export') => {
+    if (!window.XLSX) {
+      setToast('Excel library ачаалагдаагүй байна')
+      return
+    }
+
+    const data = records.map(r => ({
+      'Огноо': r.createdAt ? new Date(r.createdAt).toLocaleDateString('mn-MN') : '',
+      'Бар код': r.tracking || '',
+      'Утас': r.phone || '',
+      'Үнэ': r.declared || 0,
+      'Төлсөн': r.paidAmount || 0,
+      'Үлдэгдэл': r.balance || 0,
+      'Төлөв': r.status || '',
+      'Байршил': r.location || ''
+    }))
+
+    const ws = window.XLSX.utils.json_to_sheet(data)
+    const wb = window.XLSX.utils.book_new()
+    window.XLSX.utils.book_append_sheet(wb, ws, 'Баримтууд')
+    window.XLSX.writeFile(wb, `${filename}-${new Date().toISOString().split('T')[0]}.xlsx`)
+    setToast('Excel файл татагдлаа')
+    setTimeout(() => setToast(''), 2000)
+  }
+
 
   const sendGroupToDelivery = async (phone, addressOverride, targetLocation = 'delivery') => {
     const address = addressOverride ?? deliveryGroupAddresses[phone] ?? ''
@@ -458,9 +484,52 @@ export default function AdminPanel({
   )
 
   const documentRecords = useMemo(
-    () => filteredRecords.filter((record) => isDeliveredSettled(record)),
+    () => filteredRecords.filter((record) => isDeliveredSettled(record) && record.status !== 'archived'),
     [filteredRecords],
   )
+
+  // Fetch archived records only when needed (lazy loading)
+  const fetchArchivedRecords = async () => {
+    try {
+      const response = await listShipments()
+      return response.filter(r => r.status === 'archived')
+    } catch (error) {
+      console.error('Failed to fetch archived records:', error)
+      return []
+    }
+  }
+
+  // Auto-archive logic: runs when documentRecords change
+  useEffect(() => {
+    const autoArchive = async () => {
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30) // Archive documents older than 30 days
+      
+      const toArchive = documentRecords.filter(r => {
+        const recordDate = new Date(r.updatedAt || r.createdAt)
+        return recordDate < thirtyDaysAgo && r.status !== 'archived'
+      })
+      
+      if (toArchive.length > 0) {
+        console.log(`Auto-archiving ${toArchive.length} old documents (30+ days)`)
+        try {
+          await batchShipmentUpdate('archive', toArchive.map(t => t.id))
+          // Update local state
+          const archivedIds = toArchive.map(t => t.id)
+          updateRecords(prev => prev.map(r => 
+            archivedIds.includes(r.id) ? { ...r, status: 'archived' } : r
+          ))
+        } catch (error) {
+          console.error('Auto-archive error:', error)
+        }
+      }
+    }
+    
+    // Only run if we have documents and haven't archived recently
+    if (documentRecords.length > 0) {
+      autoArchive()
+    }
+  }, [documentRecords.length]) // Run when document count changes
 
   const documentTotals = useMemo(
     () =>
@@ -854,23 +923,25 @@ const navItems = [
             filterPhone={filterPhone}
             setFilterPhone={setFilterPhone}
             filterTracking={filterTracking}
-          setFilterTracking={setFilterTracking}
-          documentTotals={documentTotals}
-          documentPageRecords={documentPageRecords}
-          documentRecords={documentRecords}
-          documentPage={documentPage}
-          documentPageCount={documentPageCount}
-          documentPageSize={documentPageSize}
-          setDocumentPage={setDocumentPage}
-          formatCurrency={formatCurrency}
-          formatDate={formatDate}
-          StatusChip={StatusChip}
-          deliveryStatusOptions={deliveryStatusOptions}
-          handleDeliveryChange={handleDeliveryChange}
+            setFilterTracking={setFilterTracking}
+            documentTotals={documentTotals}
+            documentPageRecords={documentPageRecords}
+            documentRecords={documentRecords}
+            fetchArchivedRecords={fetchArchivedRecords}
+            documentPage={documentPage}
+            documentPageCount={documentPageCount}
+            documentPageSize={documentPageSize}
+            setDocumentPage={setDocumentPage}
+            formatCurrency={formatCurrency}
+            formatDate={formatDate}
+            StatusChip={StatusChip}
+            deliveryStatusOptions={deliveryStatusOptions}
+            handleDeliveryChange={handleDeliveryChange}
             updateRecordStatus={updateRecordStatus}
             payRemaining={payRemaining}
             amountOf={amountOf}
-            onOpenPayments={() => setActiveSection('list-payments')}
+            exportToExcel={exportToExcel}
+            onOpenPayments={() => setActiveSection('payments')}
           />
         )}
 

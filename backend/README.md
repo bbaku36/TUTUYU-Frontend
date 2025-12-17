@@ -13,9 +13,12 @@ PORT=4000
 ```bash
 cd backend
 npm install
+npm run migrate  # Schema-г нэг удаа үүсгэнэ/шинэчилнэ (prod дээр cold start-ыг багасгахын тулд зөвхөн гараар ажиллуул)
 npm run seed   # Жишээ өгөгдөл Supabase руу
 npm start      # http://localhost:4000
 ```
+
+- Prod дээр cold start багасгахын тулд `INIT_DB_ON_START=false` (эсвэл тохируулахгүй) байлгана. Local dev дээр хүсвэл `INIT_DB_ON_START=true` тавибал сервер асахдаа schema-г шалгана.
 
 ## Гол маршрут
 - `GET /health` — сервер ажиллаж буй эсэх
